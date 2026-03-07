@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>3D Heart Wishes & Photos Pro</title>
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+        background: radial-gradient(circle at center, #1a0a1a 0%, #000000 100%);
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      }
+      #ui {
+        position: absolute;
+        top: 20px;
+        width: 100%;
+        text-align: center;
+        color: #ff69b4;
+        pointer-events: none;
+        text-shadow: 0 0 10px rgba(255, 105, 180, 0.8);
+        z-index: 10;
+      }
+      h1 {
+        margin: 0;
+        font-size: 1.5rem;
+        letter-spacing: 2px;
+      }
+      p {
+        font-size: 0.9rem;
+        opacity: 0.7;
+      }
+      canvas {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="ui">
+      <h1>Chúc mừng ngyaf 8/3 các người đẹp</h1>
+      <p>Kéo chuột để khám phá các mảnh ghép yêu thương</p>
+    </div>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+      }
+    </script>
+
+    <script type="module">
+      import * as THREE from "three";
+      import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+
+      // --- Cấu hình Scene ---
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(
+        75,
+        window.innerWidth / window.innerHeight,
+        0.1,
+        1000,
+      );
+      camera.position.z = 45;
+
+      const renderer = new THREE.WebGLRenderer({
+        antialias: true,
+        alpha: true,
+      });
+      renderer.setPixelRatio(window.devicePixelRatio);
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      document.body.appendChild(renderer.domElement);
+
+      const controls = new OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.autoRotate = true;
+      controls.autoRotateSpeed = 0.3;
+
+      // --- Tạo nhóm vật thể ---
+      const heartGroup = new THREE.Group();
+      const floatingGroup = new THREE.Group();
+      scene.add(heartGroup);
+      scene.add(floatingGroup);
+
+      const wishes = [
+        "Hạnh Phúc",
+        "Bình An",
+        "Vui Vẻ",
+        "Thành Công",
+        "Yêu Thương",
+        "May Mắn",
+        "Trọn Vẹn",
+        "❤️",
+        "Mãi Bên Nhau",
+        "Gắn Kết",
+      ];
+
+      // Ảnh mẫu (Bạn có thể thay các link này bằng ảnh của bạn)
+      const photoUrls = [
+        "https://images.unsplash.com/photo-1518199266791-5375a83190b7?w=300&h=300&fit=crop",
+        "https://images.unsplash.com/photo-1516589174184-c685266d4af4?w=300&h=300&fit=crop",
+        "https://images.unsplash.com/photo-1494774157365-9e04c6720e47?w=300&h=300&fit=crop",
+        "https://images.unsplash.com/photo-1523438885200-e635ba2c371e?w=300&h=300&fit=crop",
+        "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=300&h=300&fit=crop",
+      ];
+
+      // Công thức trái tim 3D
+      function getHeartPoint(t, u) {
+        const x = 16 * Math.pow(Math.sin(t), 3) * Math.sin(u);
+        const y =
+          (13 * Math.cos(t) -
+            5 * Math.cos(2 * t) -
+            2 * Math.cos(3 * t) -
+            Math.cos(4 * t)) *
+          Math.sin(u);
+        const z = 8 * Math.cos(u);
+        return new THREE.Vector3(x * 0.8, y * 0.8, z * 0.8);
+      }
+
+      // --- 1. Hạt nền lấp lánh ---
+      const particleCount = 2500;
+      const geo = new THREE.BufferGeometry();
+      const posArr = new Float32Array(particleCount * 3);
+      for (let i = 0; i < particleCount; i++) {
+        const t = Math.random() * Math.PI * 2;
+        const u = Math.random() * Math.PI;
+        const p = getHeartPoint(t, u);
+        posArr[i * 3] = p.x;
+        posArr[i * 3 + 1] = p.y;
+        posArr[i * 3 + 2] = p.z;
+      }
+      geo.setAttribute("position", new THREE.BufferAttribute(posArr, 3));
+      const pMat = new THREE.PointsMaterial({
+        color: 0xff1493,
+        size: 0.12,
+        transparent: true,
+        blending: THREE.AdditiveBlending,
+      });
+      heartGroup.add(new THREE.Points(geo, pMat));
+
+      // --- 2. Chữ trên mặt trái tim ---
+      function createTextSprite(text, color = "#ffffff") {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        canvas.width = 256;
+        canvas.height = 64;
+        ctx.font = "bold 32px Arial";
+        ctx.textAlign = "center";
+        ctx.fillStyle = color;
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = "#ff69b4";
+        ctx.fillText(text, 128, 45);
+        const tex = new THREE.CanvasTexture(canvas);
+        return new THREE.Sprite(
+          new THREE.SpriteMaterial({ map: tex, transparent: true }),
+        );
+      }
+
+      for (let i = 0; i < 40; i++) {
+        const sprite = createTextSprite(wishes[i % wishes.length]);
+        const t = Math.random() * Math.PI * 2;
+        const u = Math.random() * Math.PI;
+        sprite.position.copy(getHeartPoint(t, u));
+        sprite.scale.set(4, 1, 1);
+        heartGroup.add(sprite);
+      }
+
+      // --- 3. Thành phần bay xung quanh (Floating Wishes & Photos) ---
+      const floatingElements = [];
+
+      // Thêm câu chúc bay tự do
+      for (let i = 0; i < 30; i++) {
+        const sprite = createTextSprite(
+          wishes[Math.floor(Math.random() * wishes.length)],
+          "#ffb6c1",
+        );
+        sprite.position.set(
+          (Math.random() - 0.5) * 80,
+          (Math.random() - 0.5) * 80,
+          (Math.random() - 0.5) * 80,
+        );
+        sprite.scale.set(5, 1.2, 1);
+        floatingGroup.add(sprite);
+        floatingElements.push({
+          obj: sprite,
+          speed: 0.01 + Math.random() * 0.02,
+          offset: Math.random() * Math.PI * 2,
+        });
+      }
+
+      // Thêm hình ảnh bay
+      const loader = new THREE.TextureLoader();
+      photoUrls.forEach((url, index) => {
+        loader.load(url, (texture) => {
+          const geometry = new THREE.PlaneGeometry(6, 6);
+          const material = new THREE.MeshBasicMaterial({
+            map: texture,
+            side: THREE.DoubleSide,
+            transparent: true,
+            opacity: 0.9,
+          });
+          const plane = new THREE.Mesh(geometry, material);
+
+          // Vị trí ngẫu nhiên xa trung tâm
+          plane.position.set(
+            (Math.random() - 0.5) * 60,
+            (Math.random() - 0.5) * 60,
+            (Math.random() - 0.5) * 60,
+          );
+
+          floatingGroup.add(plane);
+          floatingElements.push({
+            obj: plane,
+            speed: 0.005 + Math.random() * 0.01,
+            offset: Math.random() * Math.PI * 2,
+            isPhoto: true,
+          });
+        });
+      });
+
+      // --- 4. Ánh sáng ---
+      scene.add(new THREE.PointLight(0xff69b4, 3, 100));
+      scene.add(new THREE.AmbientLight(0x404040));
+
+      // --- 5. Animation Loop ---
+      let time = 0;
+      function animate() {
+        time += 0.01;
+        requestAnimationFrame(animate);
+
+        // Nhịp đập trái tim
+        const pulse = 1 + Math.sin(time * 4) * 0.04;
+        heartGroup.scale.set(pulse, pulse, pulse);
+
+        // Chuyển động lơ lửng cho các thành phần xung quanh
+        floatingElements.forEach((el) => {
+          el.obj.position.y += Math.sin(time + el.offset) * 0.03;
+          el.obj.position.x += Math.cos(time + el.offset) * 0.02;
+          if (el.isPhoto) {
+            el.obj.rotation.y += 0.01; // Ảnh xoay nhẹ
+          }
+        });
+
+        // Làm cho ảnh luôn hướng về camera nếu muốn (hoặc để xoay tự do)
+        // Trong bản này mình cho ảnh xoay tự do để trông 3D hơn
+
+        controls.update();
+        renderer.render(scene, camera);
+      }
+
+      window.addEventListener("resize", () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      });
+
+      animate();
+    </script>
+  </body>
+</html>
